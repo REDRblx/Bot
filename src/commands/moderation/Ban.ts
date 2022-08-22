@@ -1,4 +1,5 @@
 import { ApplicationCommandOptionType, CommandInteraction, GuildMember, User } from "discord.js";
+import { BanEmbed } from "../../utils/embeds/commands/BanEmbed";
 import { CommandErrorEmbed } from "../../utils/embeds/CommandErrorEmbed";
 import { Command } from "../../utils/models/Command";
 export const Ban = new Command({
@@ -20,41 +21,64 @@ export const Ban = new Command({
     },
   ],
   commandFunction: async (interaction: CommandInteraction) => {
-    const targetUser: User = <User>interaction.options.getUser("user");
-    const targetMember: GuildMember = <GuildMember>await interaction.guild?.members.fetch(targetUser.id);
-    const member: GuildMember = <GuildMember>interaction.member;
-    const reason: string = <string>interaction.options.get("reason")?.name;
+    const data = {
+      member: <GuildMember>interaction.member,
+      targetUser: <User>interaction.options.getUser("user"),
+      reason: <string>interaction.options.get("reason")?.value || "No reason provided.",
+      targetMember: <any>null,
+    };
 
-    if (member.roles.highest < targetMember?.roles?.highest) {
+    try {
+      data.targetMember = await interaction.guild?.members.fetch(data.targetUser.id);
+    } catch (err) {
       interaction.reply({
         embeds: [
           CommandErrorEmbed(
-            "They have a higher role than you,",
+            `${data.targetUser.username}#${data.targetUser.discriminator} is not a member of this guild,`,
+            "They may have left, or been kicked or banned from the guild."
+          ),
+        ],
+      });
+      return;
+    }
+    if (data.member.roles.highest.position < data.targetMember.roles.highest.position) {
+      interaction.reply({
+        embeds: [
+          CommandErrorEmbed(
+            `${data.targetUser.username}#${data.targetUser.discriminator} has a higher role than you,`,
             "You are attempting to ban someone with a higher role than you, this is not allowed."
           ),
         ],
       });
       return;
-    } else if (targetMember.bannable === false) {
+    } else if (data.targetMember.bannable === false) {
       interaction.reply({
-        embeds: [CommandErrorEmbed("I am unable to ban that user,", "My role is likely too low to ban the user,")],
+        embeds: [
+          CommandErrorEmbed(
+            `I am unable to ban ${data.targetUser.username}#${data.targetUser.discriminator},`,
+            "My role is likely too low to ban the user,"
+          ),
+        ],
       });
     } else if (
-      (member.roles.highest === targetMember?.roles?.highest &&
-        targetMember.permissions.has("Administrator") &&
-        member.permissions.has("Administrator")) ||
-      (member.roles.highest === targetMember?.roles?.highest && targetMember.permissions.has("Administrator"))
+      (data.member.roles.highest.position === data.targetMember.roles.highest.position &&
+        data.targetMember.permissions.has("Administrator") &&
+        data.member.permissions.has("Administrator")) ||
+      (data.member.roles.highest.position === data.targetMember.roles.highest.position && data.targetMember.permissions.has("Administrator"))
     ) {
       interaction.reply({
         embeds: [
           CommandErrorEmbed(
-            "They have the same level role as you,",
+            `${data.targetUser.username}#${data.targetUser.discriminator} has the same level role as you,`,
             "You are attempting to ban someone with the same level role as you, this is not allowed."
           ),
         ],
       });
     } else {
-      targetMember.ban({ reason: reason });
+      data.targetMember.ban({ reason: data.reason });
+      interaction.reply({
+        embeds: [BanEmbed(interaction.user, data.targetUser, data.reason)],
+      });
     }
   },
 });

@@ -1,11 +1,11 @@
 import { ApplicationCommandType, Client } from "discord.js";
-import { loadCommands } from "../loaders/CommandLoader";
+import { load } from "../loaders/Loader";
 import { CommandOptions } from "../utils/types/CommandOptions";
 
 export const commands: any[] = [];
 
 export function handleCommands(Client: Client) {
-  const commandsList: any[] = loadCommands("/commands");
+  const commandsList: any[] = load("/commands");
 
   commandsList.map((eventPath: string) => {
     const commandFile = require(`../${eventPath}`);
