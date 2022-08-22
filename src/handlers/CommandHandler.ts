@@ -14,6 +14,7 @@ export function handleCommands(Client: Client) {
       name: command.name,
       type: ApplicationCommandType.ChatInput,
       description: command.description,
+      options: command.options,
     });
     commands.push(command);
   });
