@@ -1,4 +1,4 @@
-import { ApplicationCommandOptionType, CommandInteraction, GuildMember, User } from "discord.js";
+import { ApplicationCommandOptionType, CommandInteraction, ComponentType, GuildMember, User } from "discord.js";
 import { BanEmbed } from "../../utils/embeds/commands/BanEmbed";
 import { CommandErrorEmbed } from "../../utils/embeds/CommandErrorEmbed";
 import { Command } from "../../utils/models/Command";
@@ -12,11 +12,11 @@ export const Embeds = new Command({
   options: [],
   commandFunction: async (interaction: CommandInteraction) => {
     const options = [];
-
+    const embeds = [];
     const embedFileNames = load("/utils/embedsCommandEmbeds");
     embedFileNames.map((fileName) => {
-      console.log(fileName);
-      const embed = require(`../..${fileName}`);
+      const embed = require(`../..${fileName}`).Embed;
+      embeds.push(embed);
       options.push({
         label: embed.selectMenu.label,
         description: embed.selectMenu.description,
@@ -25,6 +25,18 @@ export const Embeds = new Command({
     });
 
     const row = EmbedSelectMenu(options);
-    interaction.reply({ embeds: [EmbedsSelect()], components: [row] });
+    interaction.reply({ embeds: [EmbedsSelect()], components: [row], fetchReply: true }).then((message) => {
+      const collector = message.createMessageComponentCollector({ componentType: ComponentType.SelectMenu, time: 15000 });
+
+      collector.on("collect", (i) => {
+        if (i.customId !== "embedSelectMenu") return;
+        const embed = embeds.find((embed) => embed.id === i.values[0]);
+        i.deferUpdate();
+        message.delete();
+        interaction.channel.send({ embeds: [embed.embed()], components: [embed.component()] }).then((message) => {
+          embed.callback(message);
+        });
+      });
+    });
   },
 });
