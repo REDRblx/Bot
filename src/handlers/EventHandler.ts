@@ -1,8 +1,8 @@
 import { Client } from "discord.js";
-import { loadEvents } from "../loaders/EventLoader";
+import { load } from "../loaders/Loader";
 import { EventOptions } from "../utils/types/EventOptions";
 export function handleEvents(Client: Client) {
-  const events: any[] = loadEvents("/events");
+  const events: any[] = load("/events");
 
   events.map((eventPath: string) => {
     const eventFile = require(`../${eventPath}`);
