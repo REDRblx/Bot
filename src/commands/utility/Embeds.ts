@@ -33,7 +33,7 @@ export const Embeds = new Command({
         const embed = embeds.find((embed) => embed.id === i.values[0]);
         i.deferUpdate();
         message.delete();
-        interaction.channel.send({ embeds: [embed.embed()], components: [embed.component()] }).then((message) => {
+        interaction.channel.send({ embeds: embed.embeds(), components: embed.components() }).then((message) => {
           embed.callback(message);
         });
       });
